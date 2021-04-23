@@ -1,5 +1,5 @@
 [package]
-name = "youtube_api_wasm"
+name = "youtube_api"
 version = "0.0.1"
 authors = ["arn-the-long-beard <arn.menant@gmail.com>"]
 edition = "2018"
