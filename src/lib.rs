@@ -15,11 +15,11 @@ pub struct YoutubeApi {
 }
 
 impl YoutubeApi {
-    pub fn new(token: String, api_key: String) -> Self {
+    pub fn new(token: &str, api_key:&str) -> Self {
         YoutubeApi {
-            base_url: "https://www.googleapis.com/youtube/v3".to_string(),
-            api_key,
-            token,
+            base_url:"https://www.googleapis.com/youtube/v3".to_string(),
+            api_key: api_key.to_string(),
+            token: token.to_string(),
         }
     }
 
