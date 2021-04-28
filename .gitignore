@@ -18,3 +18,7 @@ Cargo.lock
 
 
 /config/
+**/target
+**/pkg/*
+**/Cargo.lock
+**/config.json
