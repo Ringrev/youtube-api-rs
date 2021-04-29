@@ -25,6 +25,16 @@ impl VideoEndPoint {
         let request = Request::new(url).method(Method::Get);
         build_response(request).await
     }
+
+
+    /// Uploads a video to YouTube and optionally sets the video's metadata.
+    /// This method supports media upload. Uploaded files must conform to these constraints
+    /// https://developers.google.com/youtube/v3/docs/videos/insert
+    pub async fn insert(&self, query_search: &str , requested_body:&str) -> Result<YoutubeVideo, ClientError> {
+        let url = format!("{}&{}", &self.url.clone(), query_search);
+        let request = Request::new(url).method(Method::Post).body(JsValue::from(requested_body));
+        build_response(request).await
+    }
 }
 
 /// The video data model https://developers.google.com/youtube/v3/docs/videos#resource
