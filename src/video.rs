@@ -27,9 +27,9 @@ impl VideoEndPoint {
     }
 }
 
+/// The video data model https://developers.google.com/youtube/v3/docs/videos#resource
 #[derive(Debug, Deserialize, Serialize, Default)]
 #[serde(rename_all = "camelCase")]
-
 pub struct YoutubeVideo {
     pub kind: String,
     pub etag: String,
