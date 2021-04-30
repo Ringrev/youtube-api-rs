@@ -54,4 +54,19 @@ pub struct VideoSnippet {
     pub channel_id: String,
     pub title: String,
     pub description: String,
+    pub channel_title:String,
+    pub tags: Vec<String>,
+    pub category_id : String,
+    pub live_broadcast_content:String,
+    pub default_language:String,
+    pub localized : Location,
+    pub default_audio_language:String,
 }
+
+#[derive(Debug, Deserialize, Serialize, Default)]
+pub struct Location {
+    title : String,
+    description :String
+}
+
+
