@@ -10,8 +10,9 @@ The implementation of youtube Api is done manually with the help of the [documen
 
 ## Todo 
 
-- Milestone version 0.1.x
+### - Milestone version 0.1.x
     
+
 - [ ] implement abstraction for generic client using `http-types`.
 - [ ] implement `seed::fetch` client with feature gate.
 - [ ] implement error handling.
@@ -19,6 +20,12 @@ The implementation of youtube Api is done manually with the help of the [documen
 - [ ] implements comments.
 - [ ] implement channels.
 - [ ] implement examples.
+
+
+### - Milestone version 1.0.0
+
+- [ ] use the Api Discovery Service from google https://developers.google.com/discovery/v1/getting_started .
+
 
 ## Notes
 
