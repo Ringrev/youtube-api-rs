@@ -3,6 +3,7 @@ use seed::fetch::{Method, Request};
 use serde::*;
 use crate::response::{YoutubeListResponse, build_response};
 use crate::ClientError;
+use crate::wasm_bindgen::JsValue;
 
 pub struct VideoEndPoint {
     url: String,
