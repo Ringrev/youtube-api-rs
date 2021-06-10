@@ -58,10 +58,10 @@ pub struct VideoSnippet {
     pub channel_title:String,
     pub tags: Vec<String>,
     pub category_id : String,
-    pub live_broadcast_content:String,
-    pub default_language:String,
+    pub live_broadcast_content:Option<String>,
+    pub default_language:Option<String>,
     pub localized : Location,
-    pub default_audio_language:String,
+    pub default_audio_language:Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]
