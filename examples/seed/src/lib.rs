@@ -50,6 +50,7 @@ pub struct Config {
 // `Msg` describes the different events you can modify state with.
 pub enum Msg {
     SignedIn(GoogleUser),
+    SignedFailed(String),
     ListYoutubeVideos,
     ListYoutubeVideosSucceed(Vec<YoutubeVideo>),
     ListYoutubeVideosFailed(ClientError),
@@ -86,8 +87,11 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
             model.videos = videos;
         }
         Msg::ListYoutubeVideosFailed(e) => {
-            log!("load error");
+            log!(e);
             model.error = Some(e);
+
+
+
         }
         Msg::ConfigFetched(Ok(config)) => model.config = Some(config),
         Msg::ConfigFetched(Err(fetch_error)) => error!("Config fetch failed! Be sure to have config.json at the root of your project with client:di and api_key", fetch_error),
@@ -99,6 +103,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 
             log!(model.user);
         }
+        Msg::SignedFailed(_) => {}
     }
 }
 
@@ -109,7 +114,14 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 // `view` describes what to display.
 fn view(model: &Model) -> Node<Msg> {
     div![
-        google_sign_in_wasm::sign_in::button(),
+          google_sign_in_wasm::sign_in::default_google_button(
+            success(),
+            fail(),
+            "profile email https://www.googleapis.com/auth/youtube.readonly",
+            &250,
+            &50,
+            "dark"
+        ),
         p![display_user_information(&model.user)],
         button![
             "List videos I like",
@@ -143,6 +155,24 @@ fn show_description(video: &YoutubeVideo) -> Node<Msg> {
     }
 }
 
+/// Contains the js function callback for google when the sign in succeeds.
+const fn success() -> &'static str {
+    "
+    function on_success(user){
+        sign_in(user);
+    }
+    "
+}
+
+/// Contains the js function callback for google when the sign in succeeds.
+const fn fail() -> &'static str {
+    "
+    function on_failure(err){
+        sign_failed(err);
+    }
+    "
+}
+
 // ------ ------
 //     Start
 // ------ ------
@@ -157,20 +187,23 @@ pub fn start() -> Box<[JsValue]> {
 
 /// Closure that triggers messages when getting update from js
 fn create_closures_for_js(app: &App<Msg, Model, Node<Msg>>) -> Box<[JsValue]> {
-    let user = wrap_in_permanent_closure(enc!((app) move |user| {
+    let sign_in = wrap_in_permanent_closure(enc!((app) move |user| {
         app.update(Msg::SignedIn(user))
     }));
+    let sign_failed = wrap_in_permanent_closure(enc!((app) move |err| {
+        app.update(Msg::SignedFailed(err))
+    }));
 
-    vec![user].into_boxed_slice()
+    vec![sign_in, sign_failed].into_boxed_slice()
 }
 
 /// Make a perma closure
 fn wrap_in_permanent_closure<T>(f: impl FnMut(T) + 'static) -> JsValue
-where
-    T: wasm_bindgen::convert::FromWasmAbi + 'static,
+    where
+        T: wasm_bindgen::convert::FromWasmAbi + 'static,
 {
-    // `Closure::new` isn't in `stable` Rust (yet) - it's a custom implementation from Seed.
-    // If you need more flexibility, use `Closure::wrap`.
+    // `Closure::new` isn't in `stable` Rust (yet) - it's a custom implementation
+    // from Seed. If you need more flexibility, use `Closure::wrap`.
     let closure = Closure::new(f);
     let closure_as_js_value = closure.as_ref().clone();
     // `forget` leaks `Closure` - we should use it only when

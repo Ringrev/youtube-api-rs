@@ -16,7 +16,7 @@ wasm-bindgen-test = "0.3.18"
 [dependencies]
 youtube_api={path = "../../"}
 
-seed = "0.8.0"
+seed = {git  ="https://github.com/seed-rs/seed", branch="master"}
 enclose = "1.1.8"
 serde = "1.0.125"
 
