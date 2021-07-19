@@ -2,9 +2,13 @@ use crate::user::GoogleIdentifiedUser;
 use enclose::enc;
 use google_sign_in_wasm::GoogleUser;
 use seed::{prelude::*, *};
+use seed_styles::*;
+use seed_styles::{px, s};
 use serde::Deserialize;
 use youtube_api::video::YoutubeVideo;
 use youtube_api::{ClientError, YoutubeApi};
+
+//use seed::prelude::web_sys::enable_style_sheets_for_set;
 
 mod user;
 // ------ ------
@@ -114,22 +118,26 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 // `view` describes what to display.
 fn view(model: &Model) -> Node<Msg> {
     div![
-          google_sign_in_wasm::sign_in::default_google_button(
-            success(),
-            fail(),
-            "profile email https://www.googleapis.com/auth/youtube.readonly",
-            &250,
-            &50,
-            "dark"
-        ),
-        p![display_user_information(&model.user)],
+        // google_sign_in_wasm::sign_in::default_google_button(
+        //     success(),
+        //     fail(),
+        //     "profile email https://www.googleapis.com/auth/youtube.readonly",
+        //     &250,
+        //     &50,
+        //     "dark"
+        // ),
+        // p![display_user_information(&model.user)],
+        img![attrs! {At::Src => "/public/images/yt_icon_rgb.png"}],
+        div![button![s().height(px(45)).width(px(250))]],
         button![
             "List videos I like",
             attrs! {
               At::Disabled => model.user
-                .is_none().as_at_value()
+                .is_none().as_at_value(),
+              At::Color => "red"
             },
-            ev(Ev::Click, |_| Msg::ListYoutubeVideos)
+            ev(Ev::Click, |_| Msg::ListYoutubeVideos),
+            style! {}
         ],
         display_videos(model)
     ]
@@ -199,8 +207,8 @@ fn create_closures_for_js(app: &App<Msg, Model, Node<Msg>>) -> Box<[JsValue]> {
 
 /// Make a perma closure
 fn wrap_in_permanent_closure<T>(f: impl FnMut(T) + 'static) -> JsValue
-    where
-        T: wasm_bindgen::convert::FromWasmAbi + 'static,
+where
+    T: wasm_bindgen::convert::FromWasmAbi + 'static,
 {
     // `Closure::new` isn't in `stable` Rust (yet) - it's a custom implementation
     // from Seed. If you need more flexibility, use `Closure::wrap`.
