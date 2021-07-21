@@ -2,8 +2,8 @@ use crate::user::GoogleIdentifiedUser;
 use enclose::enc;
 use google_sign_in_wasm::GoogleUser;
 use seed::{prelude::*, *};
+use seed_styles::s;
 use seed_styles::*;
-use seed_styles::{px, s};
 use serde::Deserialize;
 use youtube_api::video::YoutubeVideo;
 use youtube_api::{ClientError, YoutubeApi};
@@ -46,6 +46,7 @@ pub struct Model {
 pub struct Config {
     pub api_key: String,
     pub client_id: String,
+    pub redirect_uri: String,
 }
 // ------ ------
 //    Update
@@ -63,29 +64,24 @@ pub enum Msg {
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
-        Msg::ListYoutubeVideos => {
-            match &model.user {
-                None => {
-                    log!("You need to log a youtube user");
-                }
-                Some(u) => {
-                    let token = u.access_token();
-                    let config = model.config.as_ref().expect("Should have get config");
-                    let key = &config.api_key;
-                    let mut api = YoutubeApi::new(
-                        token,
-                        key
-                    );
-                    orders.perform_cmd(async move {
-                        let res = api.video().list("part=snippet&myRating=like").await;
-                        match res {
-                            Ok(videos) => Msg::ListYoutubeVideosSucceed(videos.items),
-                            Err(e) => Msg::ListYoutubeVideosFailed(e),
-                        }
-                    });
-                }
+        Msg::ListYoutubeVideos => match &model.user {
+            None => {
+                log!("You need to log a youtube user");
             }
-        }
+            Some(u) => {
+                let token = u.access_token();
+                let config = model.config.as_ref().expect("Should have get config");
+                let key = &config.api_key;
+                let mut api = YoutubeApi::new(token, key);
+                orders.perform_cmd(async move {
+                    let res = api.video().list("part=snippet&myRating=like").await;
+                    match res {
+                        Ok(videos) => Msg::ListYoutubeVideosSucceed(videos.items),
+                        Err(e) => Msg::ListYoutubeVideosFailed(e),
+                    }
+                });
+            }
+        },
         Msg::ListYoutubeVideosSucceed(videos) => {
             log!("load videos");
             model.videos = videos;
@@ -93,17 +89,16 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         Msg::ListYoutubeVideosFailed(e) => {
             log!(e);
             model.error = Some(e);
-
-
-
         }
+
         Msg::ConfigFetched(Ok(config)) => model.config = Some(config),
-        Msg::ConfigFetched(Err(fetch_error)) => error!("Config fetch failed! Be sure to have config.json at the root of your project with client:di and api_key", fetch_error),
+        Msg::ConfigFetched(Err(fetch_error)) => log!(fetch_error),
         Msg::SignedIn(user) => {
             log!("signed user detected");
-           model.user = Some(GoogleIdentifiedUser::new(user.getBasicProfile()
-                                                           .expect("Should have get profile"), 
-                                                       user.getAuthResponse(true).unwrap().access_token().unwrap()));
+            model.user = Some(GoogleIdentifiedUser::new(
+                user.getBasicProfile().expect("Should have get profile"),
+                user.getAuthResponse(true).unwrap().access_token().unwrap(),
+            ));
 
             log!(model.user);
         }
@@ -118,29 +113,71 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 // `view` describes what to display.
 fn view(model: &Model) -> Node<Msg> {
     div![
-        // google_sign_in_wasm::sign_in::default_google_button(
-        //     success(),
-        //     fail(),
-        //     "profile email https://www.googleapis.com/auth/youtube.readonly",
-        //     &250,
-        //     &50,
-        //     "dark"
-        // ),
-        // p![display_user_information(&model.user)],
-        img![attrs! {At::Src => "/public/images/yt_icon_rgb.png"}],
-        div![button![s().height(px(45)).width(px(250))]],
+        google_sign_in_wasm::sign_in::default_google_button(
+            success(),
+            fail(),
+            "profile email https://www.googleapis.com/auth/youtube.readonly",
+            &250,
+            &50,
+            "dark"
+        ),
+        p![display_user_information(&model.user)],
+        // YouTube button
+        div![
+            s().display(CssDisplay::Flex)
+                .flex_direction(CssFlexDirection::Row),
+            // YouTube logo div
+            create_youtube_button(model)
+        ],
+        // List videos div
         button![
             "List videos I like",
-            attrs! {
-              At::Disabled => model.user
-                .is_none().as_at_value(),
-              At::Color => "red"
+            attrs! {At::Disabled => model.user.is_none().as_at_value(),At::Color => "red"
             },
+            // Click event
             ev(Ev::Click, |_| Msg::ListYoutubeVideos),
             style! {}
         ],
         display_videos(model)
     ]
+}
+
+fn create_youtube_button(model: &Model) -> Node<Msg> {
+    if let Some(loaded_config) = &model.config {
+        let mut url = "https://accounts.google.com/o/oauth2/v2/auth?".to_string();
+        url.push_str("scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fyoutube.readonly&");
+        url.push_str("include_granted_scopes=true&");
+        url.push_str("state=state_parameter_passthrough_value&");
+        url.push_str(format!("redirect_uri={}&", loaded_config.redirect_uri).as_str());
+        url.push_str("response_type=token&");
+        url.push_str(format!("client_id={}", loaded_config.client_id).as_str());
+        a![
+            attrs! {
+                At::Href => url
+            },
+            button![
+                s().display(CssDisplay::Flex)
+                    .align_items(CssAlignItems::Center),
+                // YouTube logo
+                img![
+                    attrs! {
+                    At::Src => "/public/images/yt_logo_rgb_light.png",
+                    },
+                    style! {
+                            St::Height => "45px",
+                            St::Width => "200px",
+                    }
+                ],
+                // Button style
+                style! [
+                    St::Border => "none",
+                    St::BackgroundColor => "transparent"
+                ],
+            ]
+        ]
+    } else {
+        div![]
+    }
 }
 
 fn display_user_information(user: &Option<GoogleIdentifiedUser>) -> String {

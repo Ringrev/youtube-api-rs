@@ -14,6 +14,7 @@ crate-type = ["cdylib"]
 [dev-dependencies]
 wasm-bindgen-test = "0.3.18"
 [dependencies]
+seed_styles = { git = "https://github.com/seed-rs/styles_hooks", package = "seed_styles", branch = "main" }
 youtube_api={path = "../../"}
 
 seed = {git  ="https://github.com/seed-rs/seed", branch="master"}
@@ -25,9 +26,6 @@ branch="main"
 git = "https://github.com/Ringrev/google_sign_in_wasm.git"
 features=["seed"]
 
-serde="1.0.64"
-enclose = "1.1.8"
-seed = "0.8.0"
 [profile.release]
 lto = true
 opt-level = 'z'

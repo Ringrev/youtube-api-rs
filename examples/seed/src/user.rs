@@ -17,15 +17,6 @@ impl GoogleIdentifiedUser {
     pub fn name(&self) -> &str {
         &self.name
     }
-    pub fn given_name(&self) -> &str {
-        &self.given_name
-    }
-    pub fn family_name(&self) -> &str {
-        &self.family_name
-    }
-    pub fn image_url(&self) -> &str {
-        &self.image_url
-    }
     pub fn email(&self) -> &str {
         &self.email
     }
