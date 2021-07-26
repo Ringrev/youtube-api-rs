@@ -1,11 +1,9 @@
 use crate::user::GoogleIdentifiedUser;
-use enclose::enc;
-use google_sign_in_wasm::GoogleUser;
 use seed::{prelude::IndexMap, Url};
 use seed::{prelude::*, *};
 use seed_styles::s;
 use seed_styles::*;
-use serde::Deserialize;
+use youtube_api::config::{extract_query_fragments, Config};
 use youtube_api::token::AccessTokenResponse;
 use youtube_api::video::YoutubeVideo;
 use youtube_api::{ClientError, YoutubeApi};
@@ -60,36 +58,6 @@ pub fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
         response,
         error: None,
     }
-}
-
-pub fn extract_query_params(url_string: &str) -> IndexMap<String, String> {
-    let mut query: IndexMap<String, String> = IndexMap::new();
-    let url_parts: Vec<&str> = url_string.split('#').collect();
-    let mut parts_iter = url_parts.iter();
-
-    let _ = parts_iter.next();
-    if let Some(sub_string) = parts_iter.next() {
-        if sub_string.is_empty() {
-            eprintln!("Query parameter is empty!");
-        } else {
-            let key_value: Vec<&str> = sub_string.split('=').collect();
-
-            for pair in key_value {
-                let mut sub = pair.split('&');
-                let key = sub.next().unwrap_or_else(|| {
-                    panic!(
-                        "Should have a key for the parameter key but got {}",
-                        url_string
-                    )
-                });
-                let value = sub.next().unwrap_or_else(|| {
-                    panic!("Should have a value for the key but got {}", url_string)
-                });
-                query.insert(key.to_string(), value.to_string());
-            }
-        }
-    }
-    query
 }
 
 // ------ ------
