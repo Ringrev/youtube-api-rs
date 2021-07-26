@@ -7,6 +7,7 @@ mod error;
 mod response;
 pub mod token;
 pub mod video;
+pub mod client;
 
 /// Api object that contains basic info for querying.
 pub struct YoutubeApi {
@@ -60,10 +61,3 @@ impl From<FetchError> for ClientError {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
