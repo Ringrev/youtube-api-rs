@@ -1,33 +1,114 @@
 use crate::user::GoogleIdentifiedUser;
 use enclose::enc;
 use google_sign_in_wasm::GoogleUser;
+use seed::{prelude::IndexMap, Url};
 use seed::{prelude::*, *};
 use seed_styles::s;
 use seed_styles::*;
 use serde::Deserialize;
+use youtube_api::token::AccessTokenResponse;
 use youtube_api::video::YoutubeVideo;
 use youtube_api::{ClientError, YoutubeApi};
-
 //use seed::prelude::web_sys::enable_style_sheets_for_set;
-
 mod user;
 // ------ ------
 //     Init
 // ------ ------
 
 // `init` describes what should happen when your app started.
-pub fn init(_: Url, orders: &mut impl Orders<Msg>) -> Model {
+pub fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
     orders.perform_cmd(async {
         Msg::ConfigFetched(
             async { fetch("/config.json").await?.check_status()?.json().await }.await,
         )
     });
+
+    let query = extract_query_fragments(url);
+
+    let iterations = query.iter();
+
+    let mut response = AccessTokenResponse::default();
+
+    for e in iterations {
+        log!("{}", e.clone());
+
+        match e.0.as_str() {
+            "scope" => {
+                response.scope = e.1.to_string();
+                log!(e.1.as_str());
+            }
+            "access_token" => {
+                response.access_token = e.1.to_string();
+                log!(e.1.as_str());
+            }
+            "token_type" => {
+                response.token_type = e.1.to_string();
+                log!(e.1.as_str());
+            }
+            "expires_in" => {
+                response.expires_in = e.1.to_string();
+                log!(e.1.as_str());
+            }
+            _ => {}
+        }
+        log!("response: {:?}", response);
+    }
+
     Model {
         config: None,
-        user: None,
         videos: Default::default(),
+        response,
         error: None,
     }
+}
+
+pub fn extract_query_params(url_string: &str) -> IndexMap<String, String> {
+    let mut query: IndexMap<String, String> = IndexMap::new();
+    let url_parts: Vec<&str> = url_string.split('#').collect();
+    let mut parts_iter = url_parts.iter();
+
+    let _ = parts_iter.next();
+    if let Some(sub_string) = parts_iter.next() {
+        if sub_string.is_empty() {
+            eprintln!("Query parameter is empty!");
+        } else {
+            let key_value: Vec<&str> = sub_string.split('=').collect();
+
+            for pair in key_value {
+                let mut sub = pair.split('&');
+                let key = sub.next().unwrap_or_else(|| {
+                    panic!(
+                        "Should have a key for the parameter key but got {}",
+                        url_string
+                    )
+                });
+                let value = sub.next().unwrap_or_else(|| {
+                    panic!("Should have a value for the key but got {}", url_string)
+                });
+                query.insert(key.to_string(), value.to_string());
+            }
+        }
+    }
+    query
+}
+
+pub fn extract_query_fragments(url: Url) -> IndexMap<String, String> {
+    let mut query: IndexMap<String, String> = IndexMap::new();
+    if let Some(hash) = url.hash() {
+        let key_value: Vec<&str> = hash.split('&').collect();
+
+        for pair in key_value {
+            let mut sub = pair.split('=');
+            let key = sub.next().unwrap_or_else(|| {
+                panic!("Should have a key for the parameter key, but got {}", hash)
+            });
+            let value = sub
+                .next()
+                .unwrap_or_else(|| panic!("Should have a value for the key, but got {}", hash));
+            query.insert(key.to_string(), value.to_string());
+        }
+    }
+    query
 }
 
 // ------ ------
@@ -37,8 +118,8 @@ pub fn init(_: Url, orders: &mut impl Orders<Msg>) -> Model {
 // `Model` describes our app state.
 pub struct Model {
     config: Option<Config>,
-    user: Option<GoogleIdentifiedUser>,
     videos: Vec<YoutubeVideo>,
+    response: AccessTokenResponse,
     error: Option<ClientError>,
 }
 
@@ -54,8 +135,6 @@ pub struct Config {
 
 // `Msg` describes the different events you can modify state with.
 pub enum Msg {
-    SignedIn(GoogleUser),
-    SignedFailed(String),
     ListYoutubeVideos,
     ListYoutubeVideosSucceed(Vec<YoutubeVideo>),
     ListYoutubeVideosFailed(ClientError),
@@ -64,12 +143,9 @@ pub enum Msg {
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
-        Msg::ListYoutubeVideos => match &model.user {
-            None => {
-                log!("You need to log a youtube user");
-            }
-            Some(u) => {
-                let token = u.access_token();
+        Msg::ListYoutubeVideos => {
+            if !model.response.access_token.is_empty() {
+                let token = &model.response.access_token;
                 let config = model.config.as_ref().expect("Should have get config");
                 let key = &config.api_key;
                 let mut api = YoutubeApi::new(token, key);
@@ -81,7 +157,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
                     }
                 });
             }
-        },
+        }
         Msg::ListYoutubeVideosSucceed(videos) => {
             log!("load videos");
             model.videos = videos;
@@ -93,16 +169,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 
         Msg::ConfigFetched(Ok(config)) => model.config = Some(config),
         Msg::ConfigFetched(Err(fetch_error)) => log!(fetch_error),
-        Msg::SignedIn(user) => {
-            log!("signed user detected");
-            model.user = Some(GoogleIdentifiedUser::new(
-                user.getBasicProfile().expect("Should have get profile"),
-                user.getAuthResponse(true).unwrap().access_token().unwrap(),
-            ));
-
-            log!(model.user);
-        }
-        Msg::SignedFailed(_) => {}
     }
 }
 
@@ -113,15 +179,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
 // `view` describes what to display.
 fn view(model: &Model) -> Node<Msg> {
     div![
-        google_sign_in_wasm::sign_in::default_google_button(
-            success(),
-            fail(),
-            "profile email https://www.googleapis.com/auth/youtube.readonly",
-            &250,
-            &50,
-            "dark"
-        ),
-        p![display_user_information(&model.user)],
         // YouTube button
         div![
             s().display(CssDisplay::Flex)
@@ -132,7 +189,7 @@ fn view(model: &Model) -> Node<Msg> {
         // List videos div
         button![
             "List videos I like",
-            attrs! {At::Disabled => model.user.is_none().as_at_value(),At::Color => "red"
+            attrs! {At::Disabled => model.response.access_token.is_empty().as_at_value(),At::Color => "red"
             },
             // Click event
             ev(Ev::Click, |_| Msg::ListYoutubeVideos),
@@ -200,59 +257,11 @@ fn show_description(video: &YoutubeVideo) -> Node<Msg> {
     }
 }
 
-/// Contains the js function callback for google when the sign in succeeds.
-const fn success() -> &'static str {
-    "
-    function on_success(user){
-        sign_in(user);
-    }
-    "
-}
-
-/// Contains the js function callback for google when the sign in succeeds.
-const fn fail() -> &'static str {
-    "
-    function on_failure(err){
-        sign_failed(err);
-    }
-    "
-}
-
 // ------ ------
 //     Start
 // ------ ------
-
-#[wasm_bindgen]
 // `wasm-bindgen` cannot transfer struct with public closures to JS (yet) so we have to send slice.
-pub fn start() -> Box<[JsValue]> {
-    let app = App::start("app", init, update, view);
-
-    create_closures_for_js(&app)
-}
-
-/// Closure that triggers messages when getting update from js
-fn create_closures_for_js(app: &App<Msg, Model, Node<Msg>>) -> Box<[JsValue]> {
-    let sign_in = wrap_in_permanent_closure(enc!((app) move |user| {
-        app.update(Msg::SignedIn(user))
-    }));
-    let sign_failed = wrap_in_permanent_closure(enc!((app) move |err| {
-        app.update(Msg::SignedFailed(err))
-    }));
-
-    vec![sign_in, sign_failed].into_boxed_slice()
-}
-
-/// Make a perma closure
-fn wrap_in_permanent_closure<T>(f: impl FnMut(T) + 'static) -> JsValue
-where
-    T: wasm_bindgen::convert::FromWasmAbi + 'static,
-{
-    // `Closure::new` isn't in `stable` Rust (yet) - it's a custom implementation
-    // from Seed. If you need more flexibility, use `Closure::wrap`.
-    let closure = Closure::new(f);
-    let closure_as_js_value = closure.as_ref().clone();
-    // `forget` leaks `Closure` - we should use it only when
-    // we want to call given `Closure` more than once.
-    closure.forget();
-    closure_as_js_value
+#[wasm_bindgen(start)]
+pub fn start() {
+    App::start("app", init, update, view);
 }
