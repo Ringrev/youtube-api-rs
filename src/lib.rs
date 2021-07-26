@@ -2,6 +2,7 @@ use crate::error::YoutubeError;
 use crate::video::VideoEndPoint;
 use seed::prelude::*;
 
+pub mod config;
 mod error;
 mod response;
 pub mod token;
