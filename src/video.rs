@@ -1,9 +1,8 @@
-
+use crate::response::{build_response, YoutubeListResponse};
+use crate::wasm_bindgen::JsValue;
+use crate::ClientError;
 use seed::fetch::{Method, Request};
 use serde::*;
-use crate::response::{YoutubeListResponse, build_response};
-use crate::ClientError;
-use crate::wasm_bindgen::JsValue;
 
 pub struct VideoEndPoint {
     url: String,
@@ -27,13 +26,18 @@ impl VideoEndPoint {
         build_response(request).await
     }
 
-
     /// Uploads a video to YouTube and optionally sets the video's metadata.
     /// This method supports media upload. Uploaded files must conform to these constraints
     /// https://developers.google.com/youtube/v3/docs/videos/insert
-    pub async fn insert(&self, query_search: &str , requested_body:&str) -> Result<YoutubeVideo, ClientError> {
+    pub async fn insert(
+        &self,
+        query_search: &str,
+        requested_body: &str,
+    ) -> Result<YoutubeVideo, ClientError> {
         let url = format!("{}&{}", &self.url.clone(), query_search);
-        let request = Request::new(url).method(Method::Post).body(JsValue::from(requested_body));
+        let request = Request::new(url)
+            .method(Method::Post)
+            .body(JsValue::from(requested_body));
         build_response(request).await
     }
 }
@@ -55,19 +59,17 @@ pub struct VideoSnippet {
     pub channel_id: String,
     pub title: String,
     pub description: String,
-    pub channel_title:String,
-    pub tags: Vec<String>,
-    pub category_id : String,
-    pub live_broadcast_content:Option<String>,
-    pub default_language:Option<String>,
-    pub localized : Location,
-    pub default_audio_language:Option<String>,
+    pub channel_title: String,
+    pub tags: Option<Vec<String>>,
+    pub category_id: String,
+    pub live_broadcast_content: Option<String>,
+    pub default_language: Option<String>,
+    pub localized: Location,
+    pub default_audio_language: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Location {
-    title : String,
-    description :String
+    title: String,
+    description: String,
 }
-
-

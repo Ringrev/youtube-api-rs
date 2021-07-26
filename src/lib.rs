@@ -1,10 +1,10 @@
-
-use seed::prelude::*;
-use crate::video::VideoEndPoint;
 use crate::error::YoutubeError;
+use crate::video::VideoEndPoint;
+use seed::prelude::*;
 
 mod error;
 mod response;
+pub mod token;
 pub mod video;
 
 /// Api object that contains basic info for querying.
@@ -15,9 +15,9 @@ pub struct YoutubeApi {
 }
 
 impl YoutubeApi {
-    pub fn new(token: &str, api_key:&str) -> Self {
+    pub fn new(token: &str, api_key: &str) -> Self {
         YoutubeApi {
-            base_url:"https://www.googleapis.com/youtube/v3".to_string(),
+            base_url: "https://www.googleapis.com/youtube/v3".to_string(),
             api_key: api_key.to_string(),
             token: token.to_string(),
         }
@@ -30,7 +30,7 @@ impl YoutubeApi {
                 "{}/API?access_token={}&api={}",
                 self.base_url, self.token, self.api_key
             )
-                .to_string(),
+            .to_string(),
         )
     }
 }

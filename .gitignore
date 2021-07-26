@@ -20,3 +20,5 @@ Cargo.lock
 /config
 /report_screenshots
 
+/examples/seed/pkg
+

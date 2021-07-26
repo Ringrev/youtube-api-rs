@@ -11,14 +11,9 @@
 <body>
     <section id="app"></section>
     <script type="module">
-        import init from '/pkg/package.js';
-        import { start  } from '/pkg/package.js';
-        init('/pkg/package_bg.wasm').then(() => {
-            const [sign_in,sign_failed] = start();
-            window.sign_in = sign_in;
-            window.sign_failed = sign_failed;
-        });
-    </script>
+    import init from '/pkg/package.js';
+    init('/pkg/package_bg.wasm');
+  </script>
 </body>
 
 </html>
