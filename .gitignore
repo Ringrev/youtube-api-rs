@@ -17,6 +17,7 @@ Cargo.lock
 **/.DS_Store
 
 
-/config
+**/examples/seed/config.json
 /report_screenshots
+/examples/seed/pkg
 
