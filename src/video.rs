@@ -35,9 +35,8 @@ impl VideoEndPoint {
         requested_body: &str,
     ) -> Result<YoutubeVideo, ClientError> {
         let url = format!("{}&{}", &self.url.clone(), query_search);
-        let request = Request::new(url)
-            .method(Method::Post)
-            .body(JsValue::from(requested_body));
+        let body = JsValue::from(requested_body);
+        let request = Request::new(url).method(Method::Post).body(&body);
         build_response(request).await
     }
 }
