@@ -2,6 +2,7 @@ use crate::response::{build_response, YoutubeListResponse};
 use crate::wasm_bindgen::JsValue;
 use crate::ClientError;
 use seed::fetch::{Method, Request};
+use seed::prelude::IndexMap;
 use serde::*;
 
 pub struct VideoEndPoint {
@@ -36,7 +37,7 @@ impl VideoEndPoint {
     ) -> Result<YoutubeVideo, ClientError> {
         let url = format!("{}&{}", &self.url.clone(), query_search);
         let body = JsValue::from(requested_body);
-        let request = Request::new(url).method(Method::Post).body(&body);
+        let request = Request::new(url).method(Method::Post).body(body);
         build_response(request).await
     }
 }

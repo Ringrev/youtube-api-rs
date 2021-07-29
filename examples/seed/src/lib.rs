@@ -4,8 +4,7 @@ use seed_styles::s;
 use seed_styles::*;
 use youtube_api::config::Config;
 // use youtube_api::login_flow::get_token;
-use youtube_api::extract_query_parameters;
-use youtube_api::extract_query_parameters::extract_query_fragments;
+// use seed::prelude::web_sys::hash;
 use youtube_api::login_flow::AuthenticationRedirectUrl;
 use youtube_api::token::AccessTokenResponse;
 use youtube_api::video::YoutubeVideo;
@@ -24,42 +23,18 @@ pub fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
         )
     });
 
-    // let query = extract_query_fragments(url);
-    //
-    // let iterations = query.iter();
-    //
-    // let mut response = AccessTokenResponse::default();
-    //
-    // for e in iterations {
-    //     log!("{}", e.clone());
-    //
-    //     match e.0.as_str() {
-    //         "scope" => {
-    //             response.scope = e.1.to_string();
-    //             log!(e.1.as_str());
-    //         }
-    //         "access_token" => {
-    //             response.access_token = e.1.to_string();
-    //             log!(e.1.as_str());
-    //         }
-    //         "token_type" => {
-    //             response.token_type = e.1.to_string();
-    //             log!(e.1.as_str());
-    //         }
-    //         "expires_in" => {
-    //             response.expires_in = e.1.to_string();
-    //             log!(e.1.as_str());
-    //         }
-    //         _ => {}
-    //     }
-    //     log!("response: {:?}", response);
-    // }
+    let token = if let Some(hash) = url.hash() {
+        AccessTokenResponse::get_token(hash.to_string())
+    } else {
+        AccessTokenResponse::default()
+    };
 
     Model {
         authentication_redirect_url: AuthenticationRedirectUrl::default(),
         videos: Default::default(),
-        response: AccessTokenResponse::default(),
+        response: token,
         error: None,
+        api_key: Default::default(),
     }
 }
 
@@ -73,6 +48,7 @@ pub struct Model {
     videos: Vec<YoutubeVideo>,
     response: AccessTokenResponse,
     error: Option<ClientError>,
+    api_key: String,
 }
 
 // ------ ------
@@ -81,7 +57,8 @@ pub struct Model {
 
 // `Msg` describes the different events you can modify state with.
 pub enum Msg {
-    // ListYoutubeVideos,
+    ListYoutubeVideos,
+    ListMostPopularYoutubeVideos,
     ListYoutubeVideosSucceed(Vec<YoutubeVideo>),
     ListYoutubeVideosFailed(ClientError),
     ConfigFetched(fetch::Result<Config>),
@@ -89,24 +66,37 @@ pub enum Msg {
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
-        // Msg::ListYoutubeVideos => {
-        //     if !model.response.access_token.is_empty() {
-        //         let token = &model.response.access_token;
-        //         let config = model
-        //             .authentication_redirect_url
-        //             .as_ref()
-        //             .expect("Should have get config");
-        //         let key = &config.api_key;
-        //         let mut api = YoutubeApi::new(token, key);
-        //         orders.perform_cmd(async move {
-        //             let res = api.video().list("part=snippet&myRating=like").await;
-        //             match res {
-        //                 Ok(videos) => Msg::ListYoutubeVideosSucceed(videos.items),
-        //                 Err(e) => Msg::ListYoutubeVideosFailed(e),
-        //             }
-        //         });
-        //     }
-        // }
+        Msg::ListYoutubeVideos => {
+            if !model.response.access_token.is_empty() {
+                let token = &model.response.access_token;
+                let key = &model.api_key;
+                let mut api = YoutubeApi::new(token, key);
+                orders.perform_cmd(async move {
+                    let res = api.video().list("part=snippet&myRating=like").await;
+                    match res {
+                        Ok(videos) => Msg::ListYoutubeVideosSucceed(videos.items),
+                        Err(e) => Msg::ListYoutubeVideosFailed(e),
+                    }
+                });
+            }
+        }
+        Msg::ListMostPopularYoutubeVideos => {
+            if !model.response.access_token.is_empty() {
+                let token = &model.response.access_token;
+                let key = &model.api_key;
+                let mut api = YoutubeApi::new(token, key);
+                orders.perform_cmd(async move {
+                    let res = api
+                        .video()
+                        .list("part=snippet&chart=mostPopular&regionCode=US")
+                        .await;
+                    match res {
+                        Ok(videos) => Msg::ListYoutubeVideosSucceed(videos.items),
+                        Err(e) => Msg::ListYoutubeVideosFailed(e),
+                    }
+                });
+            }
+        }
         Msg::ListYoutubeVideosSucceed(videos) => {
             log!("load videos");
             model.videos = videos;
@@ -117,12 +107,16 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         }
 
         Msg::ConfigFetched(Ok(config)) => {
-            model.authentication_redirect_url = AuthenticationRedirectUrl::new(config).full_url()
+            model.api_key = config.api_key.clone();
+            model.authentication_redirect_url =
+                AuthenticationRedirectUrl::new(config).build_full_url();
         }
 
         Msg::ConfigFetched(Err(fetch_error)) => log!(fetch_error),
     }
 }
+
+pub struct ListMostPopularVideos {}
 
 // ------ ------
 //     View
@@ -143,14 +137,22 @@ fn view(model: &Model) -> Node<Msg> {
             "List videos I like",
             attrs! {At::Disabled => model.response.access_token.is_empty().as_at_value(),At::Color => "red"
             },
-            // // Click event
-            // ev(Ev::Click, |_| Msg::ListYoutubeVideos),
-            // style! {}
+            // Click event
+            ev(Ev::Click, |_| Msg::ListYoutubeVideos),
+            style! {}
+        ],
+        button![
+            "List most popular videos",
+            attrs! {At::Disabled => model.response.access_token.is_empty().as_at_value(),At::Color => "red"
+            },
+            // Click event
+            ev(Ev::Click, |_| Msg::ListMostPopularYoutubeVideos),
+            style! {}
         ],
         display_videos(model)
     ]
 }
-
+/// Creates the YouTube button
 fn create_youtube_button(model: &Model) -> Node<Msg> {
     log!(model.authentication_redirect_url.get_full_url());
 
