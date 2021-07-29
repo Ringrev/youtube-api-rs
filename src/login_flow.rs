@@ -2,9 +2,6 @@
 //! fragments are extracted
 
 use crate::config::Config;
-use crate::extract_query_parameters::extract_query_fragments;
-use crate::token::AccessTokenResponse;
-use seed::Url;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -26,7 +23,7 @@ pub struct AuthenticationRedirectUrl {
 }
 
 impl AuthenticationRedirectUrl {
-    /// Parse URL query fragments to fields
+    /// Read config to build URL
     pub fn new(config: Config) -> AuthenticationRedirectUrl {
         AuthenticationRedirectUrl::default()
             .parse_client_id(&config.client_id)
@@ -61,13 +58,14 @@ impl AuthenticationRedirectUrl {
         self.state = state.to_string();
         self
     }
-    /// Builds and returns a full redirect URL
-    pub fn build_full_url(&mut self) -> String {
+
+    /// Build and assign the full redirect URL
+    pub fn build_full_url(mut self) -> Self {
         let base_url = "https://accounts.google.com/o/oauth2/v2/auth?";
         let full_url = "".to_string()
             + base_url
             + "scope="
-            + &self.scope.to_string()
+            + &self.scope
             + "&state="
             + &self.state
             + "&redirect_uri="
@@ -76,11 +74,8 @@ impl AuthenticationRedirectUrl {
             + &self.response_type.to_string()
             + "&client_id="
             + &self.client_id.to_string();
-        full_url
-    }
-    /// Parse the full redirect URL to its field
-    pub fn parse_full_url(mut self) -> Self {
-        self.full_url = self.build_full_url();
+
+        self.full_url = full_url;
         self
     }
     /// Returns the full redirect URL
@@ -90,35 +85,6 @@ impl AuthenticationRedirectUrl {
     /// Returns the state fragment
     pub fn get_state(&self) -> &String {
         &self.state
-    }
-}
-
-/// Extract and parse token fragments
-pub fn parse_token_fragments(url: Url) {
-    let query = extract_query_fragments(url);
-    let iterations = query.iter();
-
-    let mut access_token = AccessTokenResponse::default();
-    // Extract URL fragments
-    for e in iterations {
-        match e.0.as_str() {
-            "state" => {
-                access_token.state = e.1.to_string();
-            }
-            "access_token" => {
-                access_token.access_token = e.1.to_string();
-            }
-            "token_type" => {
-                access_token.token_type = e.1.to_string();
-            }
-            "expires_in" => {
-                access_token.expires_in = e.1.to_string();
-            }
-            "scope" => {
-                access_token.scope = e.1.to_string();
-            }
-            _ => panic!("Should have token fragments, got {}",),
-        }
     }
 }
 
@@ -154,8 +120,9 @@ mod tests {
             client_id: "testClientID".to_string(),
             redirect_uri: "testRedirectURI".to_string(),
         };
-        let redir_url = AuthenticationRedirectUrl::new(config);
-        redir_url.parse_full_url();
-        assert_eq!(redir_url.full_url, "123");
+        let full_url = "https://accounts.google.com/o/oauth2/v2/auth?scope=https://www.googleapis.com/auth/youtube.readonly&state=&redirect_uri=testRedirectURI&response_type=token&client_id=testClientID";
+        let redir_url = AuthenticationRedirectUrl::new(config).build_full_url();
+        assert_eq!(full_url, redir_url.get_full_url());
+        //TODO: fix the unit test
     }
 }

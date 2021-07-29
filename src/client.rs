@@ -36,7 +36,7 @@ mod tests {
             client_id: "myClientID".to_string(),
             redirect_uri: "myRedirectURI".to_string(),
         };
-        let mut client = Client::new(config);
+        let client = Client::new(config);
         assert_eq!(client.config().api_key, "ADF32723289FWY");
     }
 }
