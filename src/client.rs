@@ -21,8 +21,8 @@ impl Client {
     pub fn set_url(&mut self, url: String) {
         self.base_url = url;
     }
-    pub fn set_config(&mut self, client: Config) {
-        self.config = client;
+    pub fn set_config(&mut self, config: Config) {
+        self.config = config;
     }
 }
 #[cfg(test)]
@@ -36,9 +36,7 @@ mod tests {
             client_id: "myClientID".to_string(),
             redirect_uri: "myRedirectURI".to_string(),
         };
-        let client = Client::new(config);
+        let mut client = Client::new(config);
         assert_eq!(client.config().api_key, "ADF32723289FWY");
-        assert_eq!(client.config().client_id, "myClientID");
-        assert_eq!(client.config().redirect_uri, "myRedirectURI")
     }
 }

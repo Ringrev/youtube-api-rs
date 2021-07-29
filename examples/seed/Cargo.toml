@@ -9,7 +9,7 @@ readme = "./README.md"
 edition = "2018"
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["cdylib", "rlib"]
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.18"
@@ -19,12 +19,6 @@ youtube_api={path = "../../"}
 
 seed = {git  ="https://github.com/seed-rs/seed", branch="master"}
 enclose = "1.1.8"
-serde = "1.0.125"
-
-[dependencies.google_sign_in_wasm]
-branch="main"
-git = "https://github.com/Ringrev/google_sign_in_wasm.git"
-features=["seed"]
 
 [profile.release]
 lto = true
