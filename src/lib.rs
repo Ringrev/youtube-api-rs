@@ -2,12 +2,14 @@ use crate::error::YoutubeError;
 use crate::video::VideoEndPoint;
 use seed::prelude::*;
 
+pub mod client;
 pub mod config;
 mod error;
+pub mod extract_query_parameters;
+pub mod login_flow;
 mod response;
 pub mod token;
 pub mod video;
-pub mod client;
 
 /// Api object that contains basic info for querying.
 pub struct YoutubeApi {
@@ -60,4 +62,3 @@ impl From<FetchError> for ClientError {
         ClientError::Client(e)
     }
 }
-
