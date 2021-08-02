@@ -8,17 +8,17 @@ use serde::Serialize;
 /// Struct with query fragments used to build authentication redirect URL
 #[derive(Default, Deserialize, Serialize, Debug)]
 pub struct AuthenticationRedirectUrl {
-    // The application's ID
+    /// The application's ID
     client_id: String,
-    // Where the API redirects the user after completed authorization
+    /// Where the API redirects the user after completed authorization
     redirect_url: String,
-    // Response after authorization process, set to 'token'
+    /// Response after authorization process, set to 'token'
     response_type: String,
-    // The resources granted access to for the application
+    /// The resources granted access to for the application
     scope: String,
-    // Maintains state between authorization request and authorization server's response
+    /// Maintains state between authorization request and authorization server's response
     state: String,
-    // The full authentication redirect URL
+    /// The full authentication redirect URL
     full_url: String,
 }
 
