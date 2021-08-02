@@ -5,7 +5,6 @@ use seed::prelude::*;
 pub mod client;
 pub mod config;
 mod error;
-pub mod extract_query_parameters;
 pub mod login_flow;
 mod response;
 pub mod token;

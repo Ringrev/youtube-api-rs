@@ -5,9 +5,10 @@ use seed_styles::*;
 use youtube_api::config::Config;
 // use youtube_api::login_flow::get_token;
 // use seed::prelude::web_sys::hash;
+use crate::video;
 use youtube_api::login_flow::AuthenticationRedirectUrl;
 use youtube_api::token::AccessTokenResponse;
-use youtube_api::video::YoutubeVideo;
+use youtube_api::video::{ListVideos, RateVideos, YoutubeVideo};
 use youtube_api::{ClientError, YoutubeApi};
 //use seed::prelude::web_sys::enable_style_sheets_for_set;
 // mod user;
@@ -62,6 +63,7 @@ pub enum Msg {
     ListYoutubeVideosSucceed(Vec<YoutubeVideo>),
     ListYoutubeVideosFailed(ClientError),
     ConfigFetched(fetch::Result<Config>),
+    // LikeVideo,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
@@ -71,8 +73,9 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
                 let token = &model.response.access_token;
                 let key = &model.api_key;
                 let mut api = YoutubeApi::new(token, key);
+                let query = ListVideos::create_with_my_rating_like().build_query_parameters();
                 orders.perform_cmd(async move {
-                    let res = api.video().list("part=snippet&myRating=like").await;
+                    let res = api.video().list(query.get_query_params()).await;
                     match res {
                         Ok(videos) => Msg::ListYoutubeVideosSucceed(videos.items),
                         Err(e) => Msg::ListYoutubeVideosFailed(e),
@@ -85,11 +88,9 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
                 let token = &model.response.access_token;
                 let key = &model.api_key;
                 let mut api = YoutubeApi::new(token, key);
+                let query = ListVideos::create_with_chart_most_popular().build_query_parameters();
                 orders.perform_cmd(async move {
-                    let res = api
-                        .video()
-                        .list("part=snippet&chart=mostPopular&regionCode=US")
-                        .await;
+                    let res = api.video().list(query.get_query_params()).await;
                     match res {
                         Ok(videos) => Msg::ListYoutubeVideosSucceed(videos.items),
                         Err(e) => Msg::ListYoutubeVideosFailed(e),
@@ -97,6 +98,17 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
                 });
             }
         }
+        // Msg::LikeVideo => {
+        //     if !model.response.access_token.is_empty() {
+        //         let token = &model.response.access_token;
+        //         let key = &model.api_key;
+        //         let mut api = YoutubeApi::new(token, key);
+        //         let query = RateVideos::like_video().build_query_params();
+        //         orders.perform_cmd(async move {
+        //             let res = api.video().
+        //         })
+        //     }
+        // }
         Msg::ListYoutubeVideosSucceed(videos) => {
             log!("load videos");
             model.videos = videos;
@@ -115,8 +127,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
         Msg::ConfigFetched(Err(fetch_error)) => log!(fetch_error),
     }
 }
-
-pub struct ListMostPopularVideos {}
 
 // ------ ------
 //     View
@@ -147,6 +157,14 @@ fn view(model: &Model) -> Node<Msg> {
             },
             // Click event
             ev(Ev::Click, |_| Msg::ListMostPopularYoutubeVideos),
+            style! {}
+        ],
+        button![
+            "Like video",
+            attrs! {At::Disabled => model.response.access_token.is_empty().as_at_value(),At::Color => "red"
+            },
+            // Click event
+            ev(Ev::Click, |_| Msg::LikeVideo),
             style! {}
         ],
         display_videos(model)
@@ -182,12 +200,6 @@ fn create_youtube_button(model: &Model) -> Node<Msg> {
     ]
 }
 
-// fn display_user_information(user: &Option<GoogleIdentifiedUser>) -> String {
-//     match user {
-//         None => "no user connected".to_string(),
-//         Some(u) => u.name().to_string() + " " + &*u.email().to_string(),
-//     }
-// }
 fn display_videos(model: &Model) -> Vec<Node<Msg>> {
     model.videos.iter().map(|v| show_description(v)).collect()
 }
