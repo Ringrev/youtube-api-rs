@@ -3,15 +3,10 @@ use seed::{prelude::*, *};
 use seed_styles::s;
 use seed_styles::*;
 use youtube_api::config::Config;
-// use youtube_api::login_flow::get_token;
-// use seed::prelude::web_sys::hash;
-use crate::video;
 use youtube_api::login_flow::AuthenticationRedirectUrl;
 use youtube_api::token::AccessTokenResponse;
-use youtube_api::video::{ListVideos, RateVideos, YoutubeVideo};
+use youtube_api::video::{ListVideos, YoutubeVideo};
 use youtube_api::{ClientError, YoutubeApi};
-//use seed::prelude::web_sys::enable_style_sheets_for_set;
-// mod user;
 // ------ ------
 //     Init
 // ------ ------
@@ -63,7 +58,6 @@ pub enum Msg {
     ListYoutubeVideosSucceed(Vec<YoutubeVideo>),
     ListYoutubeVideosFailed(ClientError),
     ConfigFetched(fetch::Result<Config>),
-    // LikeVideo,
 }
 
 pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
@@ -98,17 +92,6 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
                 });
             }
         }
-        // Msg::LikeVideo => {
-        //     if !model.response.access_token.is_empty() {
-        //         let token = &model.response.access_token;
-        //         let key = &model.api_key;
-        //         let mut api = YoutubeApi::new(token, key);
-        //         let query = RateVideos::like_video().build_query_params();
-        //         orders.perform_cmd(async move {
-        //             let res = api.video().
-        //         })
-        //     }
-        // }
         Msg::ListYoutubeVideosSucceed(videos) => {
             log!("load videos");
             model.videos = videos;
@@ -157,14 +140,6 @@ fn view(model: &Model) -> Node<Msg> {
             },
             // Click event
             ev(Ev::Click, |_| Msg::ListMostPopularYoutubeVideos),
-            style! {}
-        ],
-        button![
-            "Like video",
-            attrs! {At::Disabled => model.response.access_token.is_empty().as_at_value(),At::Color => "red"
-            },
-            // Click event
-            ev(Ev::Click, |_| Msg::LikeVideo),
             style! {}
         ],
         display_videos(model)
