@@ -2,7 +2,6 @@ use crate::response::{build_response, YoutubeListResponse};
 use crate::wasm_bindgen::JsValue;
 use crate::ClientError;
 use seed::fetch::{Method, Request};
-use seed::prelude::IndexMap;
 use serde::*;
 
 pub struct VideoEndPoint {
@@ -37,7 +36,7 @@ impl VideoEndPoint {
     ) -> Result<YoutubeVideo, ClientError> {
         let url = format!("{}&{}", &self.url.clone(), query_search);
         let body = JsValue::from(requested_body);
-        let request = Request::new(url).method(Method::Post).body(body);
+        let request = Request::new(url).method(Method::Post).body(&body);
         build_response(request).await
     }
 }
@@ -88,6 +87,7 @@ impl Part {
     /// Parse every parameter
     pub fn new_with_every_parameter() -> Part {
         Part::default().parse_part(
+            //TODO: Separate into their own function instead of string
             "contentDetails,fileDetails,id,liveStreamingDetails,localizations,player,
             processingDetails,recordingDetails,snippet,statistics,status,suggestions,topicDetails",
         )
@@ -113,9 +113,11 @@ pub struct ListVideos {
 }
 
 impl ListVideos {
+    /// Sets my_rating value to 'like' to list user's liked videos
     pub fn create_with_my_rating_like() -> ListVideos {
         ListVideos::default().parse_my_rating("like")
     }
+    /// Sets my_rating value to 'mostPopular' to list most popular videos on YouTube at the moment
     pub fn create_with_chart_most_popular() -> ListVideos {
         ListVideos::default().parse_chart("mostPopular")
     }
@@ -164,6 +166,7 @@ impl ListVideos {
 }
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct InsertVideos {
+    /// Query parameters to be used in URL
     query_params: String,
 }
 impl InsertVideos {
@@ -173,7 +176,7 @@ impl InsertVideos {
             // Required owner of video: fileDetails, processingDetails, suggestions
             "snippet,statistics,contentDetails,id,liveStreamingDetails,localizations,player,recordingDetails,status,topicDetails",
         );
-        let mut query_params = "".to_string() + "part=" + part.get_part();
+        let query_params = "".to_string() + "part=" + part.get_part();
 
         self.query_params = query_params;
         self
@@ -183,19 +186,24 @@ impl InsertVideos {
     }
 }
 #[derive(Debug, Deserialize, Serialize, Default)]
-pub struct RateVideos {
+pub struct RateVideo {
+    /// ID of the YouTube video to be rated
     id: String,
+    /// Rating to record
     rating: String,
+    /// Query parameters to be used in URL
     query_params: String,
 }
-impl RateVideos {
-    pub fn like_video() -> RateVideos {
-        RateVideos::default()
+impl RateVideo {
+    /// Create with value 'like' as rating
+    pub fn like_video() -> RateVideo {
+        RateVideo::default()
             .parse_rating("like")
             .parse_id("E6UTz_Doic8")
     }
-    pub fn dislike_video() -> RateVideos {
-        RateVideos::default()
+    /// Create with value 'dislike' as rating
+    pub fn dislike_video() -> RateVideo {
+        RateVideo::default()
             .parse_rating("dislike")
             .parse_id("E6UTz_Doic8")
     }
@@ -224,7 +232,146 @@ impl RateVideos {
         self.query_params = query_params;
         self
     }
+    /// Returns query parameters
     pub fn get_query_params(&self) -> &str {
         &self.query_params
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Default)]
+pub struct UpdateVideos {
+    /// Query parameters to be used in URL
+    query_params: String,
+}
+impl UpdateVideos {
+    /// Build and assign the query parameters
+    pub fn build_query_parameters(mut self) -> Self {
+        let part = Part::new(
+            "snippet,statistics,contentDetails,id,liveStreamingDetails,localizations,player,recordingDetails,status,topicDetails",
+        );
+        let query_params = "".to_string() + "part=" + part.get_part();
+
+        self.query_params = query_params;
+        self
+    }
+    /// Returns query parameters
+    pub fn get_query_params(&self) -> &str {
+        &self.query_params
+    }
+}
+#[derive(Debug, Deserialize, Serialize, Default)]
+pub struct GetRating {
+    /// ID of the YouTube video retrieving data from
+    id: String,
+    /// Query parameters to be used in URL
+    query_params: String,
+}
+
+impl GetRating {
+    pub fn new() -> GetRating {
+        GetRating::default().parse_id("E6UTz_Doic8")
+    }
+    /// Parse id to its field
+    pub fn parse_id(mut self, id: &str) -> Self {
+        self.id = id.to_string();
+        self
+    }
+    /// Returns the id
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+    /// Build and assign the query parameters
+    pub fn build_query_parameters(mut self) -> Self {
+        let query_params = "".to_string() + "id=" + &self.id;
+        self.query_params = query_params;
+        self
+    }
+}
+#[derive(Debug, Deserialize, Serialize, Default)]
+pub struct DeleteVideo {
+    /// ID of the YouTube video to be deleted
+    id: String,
+    /// Query parameters to be used in URL
+    query_params: String,
+}
+impl DeleteVideo {
+    pub fn new() -> DeleteVideo {
+        //TODO: Make solution for gathering id
+        DeleteVideo::default().parse_id("E6UTz_Doic8")
+    }
+    /// Parse id to its field
+    pub fn parse_id(mut self, id: &str) -> Self {
+        self.id = id.to_string();
+        self
+    }
+    /// Returns the id
+    pub fn id(&self) -> &str {
+        &self.id
+    }
+    /// Build and assign the query parameters
+    pub fn build_query_parameters(mut self) -> Self {
+        let query_params = "".to_string() + "id=" + &self.id;
+        self.query_params = query_params;
+        self
+    }
+}
+#[cfg(test)]
+mod tests {
+    use crate::video::DeleteVideo;
+    use crate::video::GetRating;
+    use crate::video::InsertVideos;
+    use crate::video::ListVideos;
+    use crate::video::UpdateVideos;
+    #[test]
+    fn test_build_query_params_list_most_popular_videos() {
+        let most_popular = ListVideos::create_with_chart_most_popular().build_query_parameters();
+        assert_eq!(most_popular.query_params, "part=snippet,statistics,contentDetails,id,liveStreamingDetails,localizations,player,recordingDetails,status,topicDetails&chart=mostPopular")
+    }
+    #[test]
+    fn test_build_query_params_list_liked_videos() {
+        let liked_videos = ListVideos::create_with_my_rating_like().build_query_parameters();
+        assert_eq!(liked_videos.query_params, "part=snippet,statistics,contentDetails,id,liveStreamingDetails,localizations,player,recordingDetails,status,topicDetails&my_rating=like")
+    }
+    #[test]
+    fn test_build_query_params_insert_video() {
+        let insert_video = InsertVideos::default().build_query_parameters();
+        assert_eq!(insert_video.query_params, "part=snippet,statistics,contentDetails,id,liveStreamingDetails,localizations,player,recordingDetails,status,topicDetails")
+    }
+    #[test]
+    fn test_build_query_params_update_video() {
+        let update_video = UpdateVideos::default().build_query_parameters();
+        assert_eq!(update_video.query_params, "part=snippet,statistics,contentDetails,id,liveStreamingDetails,localizations,player,recordingDetails,status,topicDetails")
+    }
+    #[test]
+    fn test_build_query_params_delete_video() {
+        let delete_video = DeleteVideo::new().build_query_parameters();
+        assert_eq!(delete_video.query_params, "id=E6UTz_Doic8")
+    }
+    #[test]
+    fn test_build_query_params_get_rating() {
+        let get_rating = GetRating::new().build_query_parameters();
+        assert_eq!(get_rating.query_params, "id=E6UTz_Doic8")
+    }
+    #[test]
+    #[should_panic]
+    fn test_panic_with_both_chart_and_my_rating_values() {
+        let most_popular = ListVideos {
+            chart: "123".to_string(),
+            my_rating: "123".to_string(),
+            query_params: "".to_string(),
+        }
+        .build_query_parameters();
+        assert_eq!(most_popular.query_params, "part=snippet,statistics,contentDetails,id,liveStreamingDetails,localizations,player,recordingDetails,status,topicDetails&chart=mostPopular")
+    }
+    #[test]
+    #[should_panic]
+    fn test_panic_with_neither_chart_nor_my_rating_values() {
+        let most_popular = ListVideos {
+            chart: "".to_string(),
+            my_rating: "".to_string(),
+            query_params: "".to_string(),
+        }
+        .build_query_parameters();
+        assert_eq!(most_popular.query_params, "part=snippet,statistics,contentDetails,id,liveStreamingDetails,localizations,player,recordingDetails,status,topicDetails&chart=mostPopular")
     }
 }
