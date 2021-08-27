@@ -1,77 +1,5 @@
-use crate::response::{build_response, YoutubeListResponse};
-use crate::wasm_bindgen::JsValue;
-use crate::ClientError;
-use seed::fetch::{Method, Request};
-use serde::*;
+use serde::{Deserialize,Serialize};
 
-pub struct VideoEndPoint {
-    url: String,
-}
-
-impl VideoEndPoint {
-    /// Complete the url.s
-    pub fn new(url: String) -> Self {
-        let url = url.replace("API", "videos");
-        VideoEndPoint { url }
-    }
-    /// Returns a list of videos that match the API request parameters.
-    /// Get the list with additional parameter using format -> key=value&;
-    /// More information on the official documentation https://developers.google.com/youtube/v3/docs/videos/list .
-    pub async fn list(
-        &self,
-        query_search: &str,
-    ) -> Result<YoutubeListResponse<YoutubeVideo>, ClientError> {
-        let url = format!("{}&{}", &self.url.clone(), query_search);
-        let request = Request::new(url).method(Method::Get);
-        build_response(request).await
-    }
-
-    /// Uploads a video to YouTube and optionally sets the video's metadata.
-    /// This method supports media upload. Uploaded files must conform to these constraints
-    /// https://developers.google.com/youtube/v3/docs/videos/insert
-    pub async fn insert(
-        &self,
-        query_search: &str,
-        requested_body: &str,
-    ) -> Result<YoutubeVideo, ClientError> {
-        let url = format!("{}&{}", &self.url.clone(), query_search);
-        let body = JsValue::from(requested_body);
-        let request = Request::new(url).method(Method::Post).body(&body);
-        build_response(request).await
-    }
-}
-
-/// The video data model https://developers.google.com/youtube/v3/docs/videos#resource
-#[derive(Debug, Deserialize, Serialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct YoutubeVideo {
-    pub kind: String,
-    pub etag: String,
-    pub id: String,
-    pub snippet: Option<VideoSnippet>,
-}
-
-#[derive(Debug, Deserialize, Serialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct VideoSnippet {
-    pub published_at: String,
-    pub channel_id: String,
-    pub title: String,
-    pub description: String,
-    pub channel_title: String,
-    pub tags: Option<Vec<String>>,
-    pub category_id: String,
-    pub live_broadcast_content: Option<String>,
-    pub default_language: Option<String>,
-    pub localized: Location,
-    pub default_audio_language: Option<String>,
-}
-
-#[derive(Debug, Deserialize, Serialize, Default)]
-pub struct Location {
-    title: String,
-    description: String,
-}
 #[derive(Debug, Deserialize, Serialize, Default)]
 pub struct Part {
     /// Specifies a comma-separated list of one or more video resource properties that the API
@@ -145,6 +73,8 @@ impl ListVideos {
             // Required owner of video: fileDetails, processingDetails, suggestions
             "snippet,statistics,contentDetails,id,liveStreamingDetails,localizations,player,recordingDetails,status,topicDetails",
         );
+
+        #[allow(unused_assignments)]
         let mut query_params = String::new();
         // Check if created with chart or my_rating
         if self.my_rating.is_empty() && !self.chart.is_empty() {
@@ -317,11 +247,7 @@ impl DeleteVideo {
 }
 #[cfg(test)]
 mod tests {
-    use crate::video::DeleteVideo;
-    use crate::video::GetRating;
-    use crate::video::InsertVideos;
-    use crate::video::ListVideos;
-    use crate::video::UpdateVideos;
+    use super::*;
     #[test]
     fn test_build_query_params_list_most_popular_videos() {
         let most_popular = ListVideos::create_with_chart_most_popular().build_query_parameters();
@@ -360,7 +286,7 @@ mod tests {
             my_rating: "123".to_string(),
             query_params: "".to_string(),
         }
-        .build_query_parameters();
+            .build_query_parameters();
         assert_eq!(most_popular.query_params, "part=snippet,statistics,contentDetails,id,liveStreamingDetails,localizations,player,recordingDetails,status,topicDetails&chart=mostPopular")
     }
     #[test]
@@ -371,7 +297,7 @@ mod tests {
             my_rating: "".to_string(),
             query_params: "".to_string(),
         }
-        .build_query_parameters();
+            .build_query_parameters();
         assert_eq!(most_popular.query_params, "part=snippet,statistics,contentDetails,id,liveStreamingDetails,localizations,player,recordingDetails,status,topicDetails&chart=mostPopular")
     }
 }

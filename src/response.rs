@@ -5,7 +5,8 @@ use seed::prelude::*;
 use serde::{de, de::DeserializeOwned, Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 use crate::error::YoutubeError;
-use crate::ClientError;
+
+use crate::client::ClientError;
 
 #[derive(Debug)]
 pub(crate) enum Response<T> {
