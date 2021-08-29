@@ -1,42 +1,73 @@
-use crate::config::Config;
+use crate::video::VideoEndPoint;
+use crate::error::YoutubeError;
+use seed::fetch::FetchError;
 
+/// Api object that contains basic info for querying.
 pub struct Client {
     base_url: String,
-    config: Config,
+    token: String,
+    api_key: String,
 }
 
 impl Client {
-    pub fn new(config: Config) -> Self {
+    pub fn new(token: &str, api_key: &str) -> Self {
         Client {
-            base_url: "https://youtube.googleapis.com/youtube/v3/".to_string(),
-            config,
+            base_url: "https://www.googleapis.com/youtube/v3".to_string(),
+            api_key:api_key.to_string(),
+            token: token.to_string(),
         }
     }
-    pub fn url(&self) -> &str {
-        &self.base_url
-    }
-    pub fn config(&self) -> &Config {
-        &self.config
-    }
-    pub fn set_url(&mut self, url: String) {
-        self.base_url = url;
-    }
-    pub fn set_config(&mut self, config: Config) {
-        self.config = config;
+
+    /// Get the video Api.
+    pub fn video(&mut self) -> VideoEndPoint {
+        VideoEndPoint::new(
+            format!(
+                "{}/API?access_token={}&api={}",
+                self.base_url, self.token, self.api_key
+            )
+                ,
+        )
     }
 }
+
+#[derive(Debug)]
+pub enum ClientError {
+    Youtube(YoutubeError),
+    Client(FetchError),
+}
+
+impl From<YoutubeError> for ClientError {
+    fn from(e: YoutubeError) -> Self {
+        ClientError::Youtube(e)
+    }
+}
+
+impl From<serde_json::Error> for ClientError {
+    fn from(e: serde_json::Error) -> Self {
+        ClientError::Client(FetchError::SerdeError(e))
+    }
+}
+
+impl From<FetchError> for ClientError {
+    fn from(e: FetchError) -> Self {
+        ClientError::Client(e)
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::client::Client;
+    use super::*;
     use crate::config::Config;
     #[test]
-    fn it_works() {
+    fn check_config_loaded() {
         let config = Config {
             api_key: "ADF32723289FWY".to_string(),
             client_id: "myClientID".to_string(),
             redirect_uri: "myRedirectURI".to_string(),
         };
-        let client = Client::new(config);
-        assert_eq!(client.config().api_key, "ADF32723289FWY");
+        let client = Client::new("123", &config.api_key);
+        assert_eq!(client.api_key, "ADF32723289FWY");
+        assert_eq!(client.token, "123");
+
     }
 }

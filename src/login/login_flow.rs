@@ -90,9 +90,8 @@ impl AuthenticationRedirectUrl {
 
 #[cfg(test)]
 mod tests {
-    use crate::client::Client;
-    use crate::config::Config;
-    use crate::login_flow::AuthenticationRedirectUrl;
+    use super::*;
+
     #[test]
     fn test_parse_client_id() {
         let config = Config {
@@ -121,8 +120,8 @@ mod tests {
             redirect_uri: "testRedirectURI".to_string(),
         };
         let full_url = "https://accounts.google.com/o/oauth2/v2/auth?scope=https://www.googleapis.com/auth/youtube.readonly&state=&redirect_uri=testRedirectURI&response_type=token&client_id=testClientID";
-        let redir_url = AuthenticationRedirectUrl::new(config).build_full_url();
-        assert_eq!(full_url, redir_url.get_full_url());
+        let redirect_url = AuthenticationRedirectUrl::new(config).build_full_url();
+        assert_eq!(full_url, redirect_url.get_full_url());
         //TODO: fix the unit test
     }
 }

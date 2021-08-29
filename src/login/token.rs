@@ -12,7 +12,7 @@ pub struct AccessTokenResponse {
 impl AccessTokenResponse {
     /// Extract and parse token fragments
     /// Returns response token
-    pub fn get_token(hash: String) -> AccessTokenResponse {
+    pub fn build_from_fragment(hash: String) -> AccessTokenResponse {
         let query = extract_query_fragments(hash.clone());
         let iterations = query.iter();
 
@@ -69,7 +69,7 @@ pub fn extract_query_fragments(hash: String) -> IndexMap<String, String> {
 
 #[cfg(test)]
 mod tests {
-    use crate::token::{extract_query_fragments, AccessTokenResponse};
+    use super::*;
     #[test]
     fn test_extract_state() {
         let token = AccessTokenResponse {

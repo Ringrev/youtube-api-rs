@@ -3,10 +3,8 @@ use seed::{prelude::*, *};
 use seed_styles::s;
 use seed_styles::*;
 use youtube_api::config::Config;
-use youtube_api::login_flow::AuthenticationRedirectUrl;
-use youtube_api::token::AccessTokenResponse;
-use youtube_api::video::{ListVideos, YoutubeVideo};
-use youtube_api::{ClientError, YoutubeApi};
+use youtube_api::prelude::*;
+
 // ------ ------
 //     Init
 // ------ ------
@@ -20,7 +18,7 @@ pub fn init(url: Url, orders: &mut impl Orders<Msg>) -> Model {
     });
 
     let token = if let Some(hash) = url.hash() {
-        AccessTokenResponse::get_token(hash.to_string())
+        AccessTokenResponse::build_from_fragment(hash.to_string())
     } else {
         AccessTokenResponse::default()
     };
@@ -66,7 +64,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
             if !model.response.access_token.is_empty() {
                 let token = &model.response.access_token;
                 let key = &model.api_key;
-                let mut api = YoutubeApi::new(token, key);
+                let mut api = Client::new(token, key);
                 let query = ListVideos::create_with_my_rating_like().build_query_parameters();
                 orders.perform_cmd(async move {
                     let res = api.video().list(query.get_query_params()).await;
@@ -81,7 +79,7 @@ pub fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
             if !model.response.access_token.is_empty() {
                 let token = &model.response.access_token;
                 let key = &model.api_key;
-                let mut api = YoutubeApi::new(token, key);
+                let mut api = Client::new(token, key);
                 let query = ListVideos::create_with_chart_most_popular().build_query_parameters();
                 orders.perform_cmd(async move {
                     let res = api.video().list(query.get_query_params()).await;
