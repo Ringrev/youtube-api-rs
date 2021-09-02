@@ -23,7 +23,7 @@ The implementation of youtube Api is done manually with the help of the [documen
 - Select your project here: https://console.cloud.google.com/apis/credentials
 - Click 'Create credentials'.
 
-####API Key
+### API Key
 - After clicking 'API Key' in the 'Create credentials' menu, an API key should be generated.
 - Click on the newly generated API key, and give it a name, ex: Youtube.
 - Application restrictions: click 'HTTP referrers'.
@@ -33,7 +33,7 @@ The implementation of youtube Api is done manually with the help of the [documen
 - Click 'Save' on the API key.
 - On the 'Dashboard' tab, copy the key and insert it in the config.json file.
 
-####OAuth Client ID
+### OAuth Client ID
 - Select 'Web application' after clicking the 'Create OAuth client ID' menu option.
 - Give the client ID a name, ex: Ringrev
 - Authorized JavaScript origins: Add 2 URIs with the URL to your local server, one containing http:// and one containing https://
