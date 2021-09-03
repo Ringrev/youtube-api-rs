@@ -4,6 +4,7 @@ use seed_styles::s;
 use seed_styles::*;
 use youtube_api::config::Config;
 use youtube_api::prelude::*;
+use youtube_api::client::ClientError;
 
 // ------ ------
 //     Init
@@ -140,6 +141,18 @@ fn view(model: &Model) -> Node<Msg> {
             ev(Ev::Click, |_| Msg::ListMostPopularYoutubeVideos),
             style! {}
         ],
+        span![
+            if let Some(error) = &model.error {
+               let  error_message=  match error {
+                  ClientError::Youtube(e)=>  format!(" code : {} , message : {}" , e.code(), e.message()),
+                    ClientError::Client(e)=> format!("message : {:?}" , e  )
+                };
+
+                error_message
+            } else {
+                "".to_string()
+            }
+        ],
         display_videos(model)
     ]
 }
@@ -157,7 +170,7 @@ fn create_youtube_button(model: &Model) -> Node<Msg> {
             // YouTube logo
             img![
                 attrs! {
-                At::Src => "/public/images/yt_logo_rgb_light.png",
+                At::Src => "/public/images/logo.png",
                 },
                 style! {
                         St::Height => "45px",
