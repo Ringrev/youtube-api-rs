@@ -42,8 +42,14 @@ impl From<YoutubeError> for ClientError {
     }
 }
 
-impl From<serde_json::Error> for ClientError {
+impl From<serde_json::Error> for ClientError{
     fn from(e: serde_json::Error) -> Self {
+        ClientError::Client(FetchError::SerdeError(serde_wasm_bindgen::Error::new(e.to_string())))
+    }
+}
+
+impl From<serde_wasm_bindgen::Error> for ClientError {
+    fn from(e: serde_wasm_bindgen::Error) -> Self {
         ClientError::Client(FetchError::SerdeError(e))
     }
 }
