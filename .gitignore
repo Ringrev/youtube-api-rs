@@ -21,6 +21,6 @@ Cargo.lock
 /report_screenshots
 /examples/seed/pkg
 /examples/seed/target
-
+/examples/seed/Cargo.lock
 
 
